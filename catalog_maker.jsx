@@ -75,6 +75,18 @@ const EMPTY_PRODUCT = {
   sku: "",
 };
 
+const normalizeCapacityValue = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  const match = text.match(/\d+(?:\.\d+)?/);
+  return match ? match[0] : "";
+};
+
+const formatCapacityDisplay = (value) => {
+  const normalized = normalizeCapacityValue(value);
+  return normalized ? `${normalized} ML` : "— ML";
+};
+
 function ProductCard({ product, onEdit, onDelete }) {
   const descriptionText = [product.description, product.details].filter(Boolean).join(" ");
 
@@ -97,7 +109,7 @@ function ProductCard({ product, onEdit, onDelete }) {
         letterSpacing: "1px",
         color: "#000",
       }}>
-        {product.capacity || "— ML"}
+        {formatCapacityDisplay(product.capacity)}
       </div>
 
       {/* Image */}
@@ -198,7 +210,15 @@ function ProductModal({ product, onSave, onClose }) {
   };
 
   const set = (field) => (e) =>
-    setForm((f) => ({ ...f, [field]: field === "inStock" ? e.target.checked : e.target.value }));
+    setForm((f) => ({
+      ...f,
+      [field]:
+        field === "inStock"
+          ? e.target.checked
+          : field === "capacity"
+            ? normalizeCapacityValue(e.target.value)
+            : e.target.value,
+    }));
 
   return (
     <div style={{
@@ -234,9 +254,11 @@ function ProductModal({ product, onSave, onClose }) {
               />
             ) : (
               <input
-                type="text"
+                type={field === "capacity" ? "number" : "text"}
                 value={form[field]}
                 onChange={set(field)}
+                min={field === "capacity" ? "0" : undefined}
+                step={field === "capacity" ? "any" : undefined}
                 style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box" }}
               />
             )}
@@ -347,7 +369,7 @@ export default function CatalogMaker() {
         return {
           id: nextId.current++,
           image: null,
-          capacity: obj.capacity || obj.size || obj.ml || "",
+          capacity: normalizeCapacityValue(obj.capacity || obj.size || obj.ml || ""),
           price: obj.price || obj.rs || "",
           qty: "1 pcs",
           inStock: obj.instock !== "false" && obj.instock !== "0",
