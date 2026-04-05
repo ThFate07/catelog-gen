@@ -71,10 +71,13 @@ const EMPTY_PRODUCT = {
   qty: "1 pcs",
   inStock: true,
   description: "",
+  details: "",
   sku: "",
 };
 
 function ProductCard({ product, onEdit, onDelete }) {
+  const descriptionText = [product.description, product.details].filter(Boolean).join(" ");
+
   return (
     <div style={{
       border: "1px solid #ccc",
@@ -150,7 +153,7 @@ function ProductCard({ product, onEdit, onDelete }) {
         lineHeight: "1.3",
         minHeight: "36px",
       }}>
-        {product.description || "Product description here"}
+        {descriptionText || "Product description here"}
       </div>
 
       {/* SKU */}
@@ -161,7 +164,7 @@ function ProductCard({ product, onEdit, onDelete }) {
         color: "#000",
         borderTop: "1px solid #ddd",
       }}>
-        {product.sku || "SKU"}
+        {product.sku || "Item No."}
       </div>
 
       {/* Action buttons (hidden in print) */}
@@ -215,7 +218,8 @@ function ProductModal({ product, onSave, onClose }) {
           ["Capacity (e.g. 260 ML)", "capacity"],
           ["Price (Rs.)", "price"],
           ["Product Description", "description"],
-          ["SKU / Product Code", "sku"],
+          ["Details", "details"],
+          ["Item No. / Product Code", "sku"],
         ].map(([label, field]) => (
           <div key={field} style={{ marginBottom: "14px" }}>
             <label style={{ display: "block", fontSize: "12px", color: "#555", marginBottom: "4px", fontWeight: "600" }}>
@@ -326,10 +330,20 @@ export default function CatalogMaker() {
     reader.onload = (ev) => {
       const lines = ev.target.result.split("\n").filter(Boolean);
       const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+      const pickFromNormalized = (normalizedObj, aliases) => {
+        for (const alias of aliases) {
+          const value = normalizedObj[alias];
+          if (value) return value;
+        }
+        return "";
+      };
       const newProducts = lines.slice(1).map((line) => {
         const vals = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
         const obj = {};
+        const normalizedObj = {};
+        const normalizeKey = (k) => String(k || "").toLowerCase().replace(/[^a-z0-9]/g, "");
         headers.forEach((h, i) => (obj[h] = vals[i] || ""));
+        headers.forEach((h, i) => (normalizedObj[normalizeKey(h)] = vals[i] || ""));
         return {
           id: nextId.current++,
           image: null,
@@ -338,7 +352,21 @@ export default function CatalogMaker() {
           qty: "1 pcs",
           inStock: obj.instock !== "false" && obj.instock !== "0",
           description: obj.description || obj.desc || "",
-          sku: obj.sku || obj.code || obj.id || "",
+          details: obj.details || obj.detail || "",
+          sku: pickFromNormalized(normalizedObj, [
+            "itemno",
+            "itemnumber",
+            "itemnum",
+            "itemcode",
+            "productcode",
+            "productsku",
+            "skucode",
+            "stockkeepingunit",
+            "sku",
+            "item",
+            "code",
+            "id",
+          ]),
         };
       });
       setProducts(newProducts);
@@ -427,7 +455,7 @@ export default function CatalogMaker() {
         flexWrap: "wrap",
       }}>
         <span>💡 <strong>Tip:</strong> Click <em>Edit</em> on any card to upload a product image and fill in details.</span>
-        <span>📊 <strong>CSV columns:</strong> capacity, price, description, sku, inStock</span>
+        <span>📊 <strong>CSV columns:</strong> capacity, price, description, details, item no, inStock</span>
         <span>🖨️ Use <em>Print / Save PDF</em> to export your catalog — set paper to A4 or Letter in print dialog.</span>
       </div>
 
