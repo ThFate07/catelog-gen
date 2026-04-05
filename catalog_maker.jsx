@@ -6,9 +6,9 @@ const DEMO_PRODUCTS = [
     image: null,
     capacity: "260 ML",
     price: "125",
-    qty: "6 pcs",
+    qty: "1 pcs",
     inStock: true,
-    description: "AB-9DD2 GR KIVVI 6 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
+    description: "AB-9DD2 GR KIVVI 1 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
     sku: "AB-9DD2",
   },
   {
@@ -16,9 +16,9 @@ const DEMO_PRODUCTS = [
     image: null,
     capacity: "260 ML",
     price: "125",
-    qty: "6 pcs",
+    qty: "1 pcs",
     inStock: true,
-    description: "AB-9J GR KIVVI 6 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
+    description: "AB-9J GR KIVVI 1 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
     sku: "AB-9J",
   },
   {
@@ -26,9 +26,9 @@ const DEMO_PRODUCTS = [
     image: null,
     capacity: "250 ML",
     price: "125",
-    qty: "6 pcs",
+    qty: "1 pcs",
     inStock: true,
-    description: "AB-9FD GR KIVVI 6 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
+    description: "AB-9FD GR KIVVI 1 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
     sku: "AB-9FD",
   },
   {
@@ -36,9 +36,9 @@ const DEMO_PRODUCTS = [
     image: null,
     capacity: "250 ML",
     price: "125",
-    qty: "6 pcs",
+    qty: "1 pcs",
     inStock: true,
-    description: "AB-9WJ GR KIVVI 6 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
+    description: "AB-9WJ GR KIVVI 1 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
     sku: "AB-9WJ",
   },
   {
@@ -46,9 +46,9 @@ const DEMO_PRODUCTS = [
     image: null,
     capacity: "260 ML",
     price: "125",
-    qty: "6 pcs",
+    qty: "1 pcs",
     inStock: true,
-    description: "AB-9BHX GR KIVVI 6 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
+    description: "AB-9BHX GR KIVVI 1 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
     sku: "AB-9BHX",
   },
   {
@@ -56,9 +56,9 @@ const DEMO_PRODUCTS = [
     image: null,
     capacity: "250 ML",
     price: "125",
-    qty: "6 pcs",
+    qty: "1 pcs",
     inStock: true,
-    description: "AB-9VW GR KIVVI 6 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
+    description: "AB-9VW GR KIVVI 1 PCS 250 ML JUICE GLASS IN COL BOX 12 SET CTN",
     sku: "AB-9VW",
   },
 ];
@@ -68,7 +68,7 @@ const EMPTY_PRODUCT = {
   image: null,
   capacity: "",
   price: "",
-  qty: "6 pcs",
+  qty: "1 pcs",
   inStock: true,
   description: "",
   sku: "",
@@ -105,11 +105,23 @@ function ProductCard({ product, onEdit, onDelete }) {
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
+        padding: "6px",
         margin: "0 4px",
         border: "1px solid #e0e0e0",
       }}>
         {product.image ? (
-          <img src={product.image} alt={product.sku} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={product.image}
+            alt={product.sku}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              objectPosition: "center",
+              display: "block",
+              background: "#fff",
+            }}
+          />
         ) : (
           <div style={{ color: "#aaa", fontSize: "11px", textAlign: "center", padding: "8px" }}>
             <div style={{ fontSize: "28px", marginBottom: "4px" }}>🥃</div>
@@ -122,7 +134,7 @@ function ProductCard({ product, onEdit, onDelete }) {
       <div style={{ padding: "4px 6px 2px", display: "flex", alignItems: "baseline", gap: "4px", flexWrap: "wrap" }}>
         <span style={{ color: "#cc0000", fontWeight: "bold", fontSize: "13px" }}>Rs</span>
         <span style={{ color: "#cc0000", fontWeight: "900", fontSize: "16px" }}>{product.price || "—"}</span>
-        <span style={{ color: "#000", fontWeight: "bold", fontSize: "11px" }}>for {product.qty}</span>
+        <span style={{ color: "#000", fontWeight: "bold", fontSize: "11px" }}>for 1 pcs</span>
         {product.inStock && (
           <span style={{ color: "#cc0000", fontWeight: "900", fontSize: "11px", marginLeft: "2px" }}>IN STOCK</span>
         )}
@@ -202,7 +214,6 @@ function ProductModal({ product, onSave, onClose }) {
         {[
           ["Capacity (e.g. 260 ML)", "capacity"],
           ["Price (Rs.)", "price"],
-          ["Quantity (e.g. 6 pcs)", "qty"],
           ["Product Description", "description"],
           ["SKU / Product Code", "sku"],
         ].map(([label, field]) => (
@@ -238,7 +249,22 @@ function ProductModal({ product, onSave, onClose }) {
             Product Image
           </label>
           {form.image && (
-            <img src={form.image} alt="preview" style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "6px", marginBottom: "8px", border: "1px solid #eee" }} />
+            <img
+              src={form.image}
+              alt="preview"
+              style={{
+                width: "100%",
+                height: "120px",
+                objectFit: "contain",
+                objectPosition: "center",
+                borderRadius: "6px",
+                marginBottom: "8px",
+                border: "1px solid #eee",
+                background: "#fafafa",
+                padding: "6px",
+                display: "block",
+              }}
+            />
           )}
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
           <button onClick={() => fileRef.current.click()} style={{
@@ -309,13 +335,14 @@ export default function CatalogMaker() {
           image: null,
           capacity: obj.capacity || obj.size || obj.ml || "",
           price: obj.price || obj.rs || "",
-          qty: obj.qty || obj.quantity || "6 pcs",
+          qty: "1 pcs",
           inStock: obj.instock !== "false" && obj.instock !== "0",
           description: obj.description || obj.desc || "",
           sku: obj.sku || obj.code || obj.id || "",
         };
       });
-      setProducts((ps) => [...ps, ...newProducts]);
+      setProducts(newProducts);
+      nextId.current = newProducts.length + 1;
     };
     reader.readAsText(file);
   };
@@ -400,7 +427,7 @@ export default function CatalogMaker() {
         flexWrap: "wrap",
       }}>
         <span>💡 <strong>Tip:</strong> Click <em>Edit</em> on any card to upload a product image and fill in details.</span>
-        <span>📊 <strong>CSV columns:</strong> capacity, price, qty, description, sku, inStock</span>
+        <span>📊 <strong>CSV columns:</strong> capacity, price, description, sku, inStock</span>
         <span>🖨️ Use <em>Print / Save PDF</em> to export your catalog — set paper to A4 or Letter in print dialog.</span>
       </div>
 
