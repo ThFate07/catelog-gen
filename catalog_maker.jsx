@@ -4,7 +4,6 @@ const DEMO_PRODUCTS = [
   {
     id: 1,
     image: null,
-    capacity: "260 ML",
     price: "125",
     qty: "1 pcs",
     inStock: true,
@@ -14,7 +13,6 @@ const DEMO_PRODUCTS = [
   {
     id: 2,
     image: null,
-    capacity: "260 ML",
     price: "125",
     qty: "1 pcs",
     inStock: true,
@@ -24,7 +22,6 @@ const DEMO_PRODUCTS = [
   {
     id: 3,
     image: null,
-    capacity: "250 ML",
     price: "125",
     qty: "1 pcs",
     inStock: true,
@@ -34,7 +31,6 @@ const DEMO_PRODUCTS = [
   {
     id: 4,
     image: null,
-    capacity: "250 ML",
     price: "125",
     qty: "1 pcs",
     inStock: true,
@@ -44,7 +40,6 @@ const DEMO_PRODUCTS = [
   {
     id: 5,
     image: null,
-    capacity: "260 ML",
     price: "125",
     qty: "1 pcs",
     inStock: true,
@@ -54,7 +49,6 @@ const DEMO_PRODUCTS = [
   {
     id: 6,
     image: null,
-    capacity: "250 ML",
     price: "125",
     qty: "1 pcs",
     inStock: true,
@@ -66,7 +60,6 @@ const DEMO_PRODUCTS = [
 const EMPTY_PRODUCT = {
   id: null,
   image: null,
-  capacity: "",
   price: "",
   qty: "1 pcs",
   inStock: true,
@@ -123,17 +116,45 @@ const persistWorks = (works, currentWorkId) => {
   }
 };
 
-const normalizeCapacityValue = (value) => {
-  const text = String(value ?? "").trim();
-  if (!text) return "";
-  const match = text.match(/\d+(?:\.\d+)?/);
-  return match ? match[0] : "";
+const IMAGE_EXPORT_SETTINGS = {
+  maxWidth: 900,
+  maxHeight: 900,
+  quality: 0.8,
 };
 
-const formatCapacityDisplay = (value) => {
-  const normalized = normalizeCapacityValue(value);
-  return normalized ? `${normalized} ML` : "— ML";
-};
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Unable to read the selected image."));
+    reader.readAsDataURL(file);
+  });
+
+const optimizeImageForCatalog = (dataUrl) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, IMAGE_EXPORT_SETTINGS.maxWidth / image.naturalWidth, IMAGE_EXPORT_SETTINGS.maxHeight / image.naturalHeight);
+      const width = Math.max(1, Math.round(image.naturalWidth * scale));
+      const height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        reject(new Error("Canvas is not available for image compression."));
+        return;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", IMAGE_EXPORT_SETTINGS.quality));
+    };
+    image.onerror = () => reject(new Error("Unable to load the selected image."));
+    image.src = dataUrl;
+  });
 
 function ProductCard({ product, onEdit, onDelete }) {
   const descriptionText = [product.description, product.details].filter(Boolean).join(" ");
@@ -148,18 +169,6 @@ function ProductCard({ product, onEdit, onDelete }) {
       fontFamily: "'Arial', sans-serif",
       fontSize: "12px",
     }}>
-      {/* Capacity Header */}
-      <div style={{
-        textAlign: "center",
-        fontWeight: "900",
-        fontSize: "22px",
-        padding: "6px 4px 2px",
-        letterSpacing: "1px",
-        color: "#000",
-      }}>
-        {formatCapacityDisplay(product.capacity)}
-      </div>
-
       {/* Image */}
       <div style={{
         height: "130px",
@@ -249,23 +258,28 @@ function ProductModal({ product, onSave, onClose }) {
   const [form, setForm] = useState({ ...product });
   const fileRef = useRef();
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setForm((f) => ({ ...f, image: ev.target.result }));
-    reader.readAsDataURL(file);
+    let rawImage = null;
+    try {
+      rawImage = await readFileAsDataUrl(file);
+      const optimizedImage = await optimizeImageForCatalog(rawImage);
+      setForm((f) => ({ ...f, image: optimizedImage }));
+    } catch (error) {
+      console.error(error);
+      if (rawImage) {
+        setForm((f) => ({ ...f, image: rawImage }));
+      }
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const set = (field) => (e) =>
     setForm((f) => ({
       ...f,
-      [field]:
-        field === "inStock"
-          ? e.target.checked
-          : field === "capacity"
-            ? normalizeCapacityValue(e.target.value)
-            : e.target.value,
+      [field]: field === "inStock" ? e.target.checked : e.target.value,
     }));
 
   return (
@@ -282,8 +296,7 @@ function ProductModal({ product, onSave, onClose }) {
           {form.id ? "Edit Product" : "Add New Product"}
         </h2>
 
-        {[
-          ["Capacity (e.g. 260 ML)", "capacity"],
+        {[ 
           ["Price (Rs.)", "price"],
           ["Product Description", "description"],
           ["Details", "details"],
@@ -302,11 +315,9 @@ function ProductModal({ product, onSave, onClose }) {
               />
             ) : (
               <input
-                type={field === "capacity" ? "number" : "text"}
+                type="text"
                 value={form[field]}
                 onChange={set(field)}
-                min={field === "capacity" ? "0" : undefined}
-                step={field === "capacity" ? "any" : undefined}
                 style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box" }}
               />
             )}
@@ -588,7 +599,6 @@ export default function CatalogMaker() {
         return {
           id: nextId.current++,
           image: null,
-          capacity: normalizeCapacityValue(obj.capacity || obj.size || obj.ml || ""),
           price: obj.price || obj.rs || "",
           qty: "1 pcs",
           inStock: obj.instock !== "false" && obj.instock !== "0",
@@ -621,11 +631,19 @@ export default function CatalogMaker() {
   return (
     <>
       <style>{`
+        @page {
+          margin: 8mm;
+          size: auto;
+        }
         @media print {
           .no-print { display: none !important; }
           body { margin: 0; }
           .catalog-grid { grid-template-columns: repeat(3, 1fr) !important; }
           .page-container { padding: 0 !important; background: white !important; }
+          .page-container, .page-container * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
         }
         body { margin: 0; }
         * { box-sizing: border-box; }
@@ -731,7 +749,7 @@ export default function CatalogMaker() {
       }}>
         <span>✅ <strong>Auto-save:</strong> Every change is saved in your browser instantly.</span>
         <span>💡 <strong>Tip:</strong> Click <em>Edit</em> on any card to upload a product image and fill in details.</span>
-        <span>📊 <strong>CSV columns:</strong> capacity, price, description, details, item no, inStock</span>
+        <span>📊 <strong>CSV columns:</strong> price, description, details, item no, inStock</span>
         <span>🖨️ Use <em>Print / Save PDF</em> to export your catalog — set paper to A4 or Letter in print dialog.</span>
       </div>
 
